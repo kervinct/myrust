@@ -1,19 +1,25 @@
 fn main() {
+    // initialized an engine
     let mut tera_engine = tera::Tera::default();
 
+    // create string template
     tera_engine
         .add_raw_template("id_template", "Identifier: {{id}}.")
         .unwrap();
 
+    // create value container
     let mut numeric_id = tera::Context::new();
+    // insert key-value
     numeric_id.insert("id", &7362);
     println!(
         "id_template with numeric_id: [{}]",
+        // render
         tera_engine
             .render("id_template", &numeric_id.clone())
             .unwrap()
     );
 
+    // create another container
     let mut textual_id = tera::Context::new();
     textual_id.insert("id", &"ABCD");
     println!(
@@ -21,6 +27,7 @@ fn main() {
         tera_engine.render("id_template", &textual_id).unwrap()
     );
 
+    // create another template
     tera_engine
         .add_raw_template("person_id_template", "Person id: {{person.id}}")
         .unwrap();
@@ -32,6 +39,7 @@ fn main() {
     }
 
     let mut one_person = tera::Context::new();
+    // insert key-value, value is a struct
     one_person.insert(
         "person",
         &Person {
@@ -46,6 +54,7 @@ fn main() {
             .unwrap()
     );
 
+    // template if-syntax
     tera_engine
         .add_raw_template(
             "possible_person_id_template",
@@ -64,11 +73,13 @@ fn main() {
 
     println!(
         "possible_person_id_template with empty context: [{}]",
+        // render with None
         tera_engine
             .render("possible_person_id_template", &tera::Context::new())
             .unwrap()
     );
 
+    // template for-syntax
     tera_engine
         .add_raw_template(
             "multiple_person_id_template",
@@ -103,6 +114,7 @@ fn main() {
             .unwrap()
     );
 
+    // create file template with given name
     tera_engine
         .add_template_file("templates/templ_id.txt", Some("id_file_template"))
         .unwrap();
@@ -114,6 +126,7 @@ fn main() {
             .unwrap()
     );
 
+    // create file template named with path
     tera_engine
         .add_template_file("templates/templ_id.txt", None)
         .unwrap();
