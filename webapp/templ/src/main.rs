@@ -142,6 +142,7 @@ fn main() {
     );
 }
 
+// load all template at once and name with filename(not include directory name)
 lazy_static::lazy_static! {
     pub static ref TERA: tera::Tera =
         tera::Tera::new("templates/**/*").unwrap();
