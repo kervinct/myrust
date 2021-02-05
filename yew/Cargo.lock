@@ -260,6 +260,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "incr"
+version = "0.1.0"
+dependencies = [
+ "yew",
+]
+
+[[package]]
 name = "indexmap"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
