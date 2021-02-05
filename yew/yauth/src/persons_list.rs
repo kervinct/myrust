@@ -12,8 +12,8 @@ pub struct PersonsListModel {
     filtered_persons: Vec<Person>,
     selected_ids: std::collections::HashSet<u32>,
     can_write: bool,
-    go_to_one_person_page: Option<Callaback<Option<Person>>>,
-    db_connection: std::rc::Rc<std::cell::RefCel<DbConnection>>,
+    go_to_one_person_page: Option<Callback<Option<Person>>>,
+    db_connection: std::rc::Rc<std::cell::RefCell<DbConnection>>,
 }
 
 #[derive(Debug)]
@@ -35,14 +35,14 @@ pub struct PersonsListProps {
     #[prop_or(None)]
     pub go_to_one_person_page: Option<Callback<Option<Person>>>,
     #[prop_or(None)]
-    pub db_connection: Option<std::rc::Rc<std::cell::Cell<DbConnection>>>,
+    pub db_connection: Option<std::rc::Rc<std::cell::RefCell<DbConnection>>>,
 }
 
 impl Component for PersonsListModel {
     type Message = PersonsListMsg;
     type Properties = PersonsListProps;
 
-    pub fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
+    fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
         let mut model = Self {
             link: link,
             id_to_find: None,
@@ -59,17 +59,17 @@ impl Component for PersonsListModel {
         model
     }
 
-    pub fn change(&mut self, props: Self::Properties) -> ShouldRender {
+    fn change(&mut self, props: Self::Properties) -> ShouldRender {
         self.can_write = props.can_write;
         self.go_to_one_person_page = props.go_to_one_person_page;
-        self.db_connection = props.db_connection.unwrap(),
+        self.db_connection = props.db_connection.unwrap();
         self.filtered_persons = self.db_connection
             .borrow()
             .get_persons_by_partial_name("");
         true
     }
 
-    pub fn update(&mut self, msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, msg: Self::Message) -> ShouldRender {
         use PersonsListMsg::*;
         match msg {
             IdChanged(id_str) => self.id_to_find = id_str.parse::<u32>().ok(),
@@ -96,7 +96,7 @@ impl Component for PersonsListModel {
                         }
                     }
                     self.update(FilterPressed);
-                    DialogService.alert("Deleted.");
+                    DialogService::alert("Deleted.");
                 }
             }
             AddPressed => {
@@ -125,87 +125,71 @@ impl Component for PersonsListModel {
         true
     }
 
-    pub fn view(&self) -> Html {
+    fn view(&self) -> Html {
+        let change_id = self.link.callback(|e: InputData| PersonsListMsg::IdChanged(e.value));
+        let find_pressed = self.link.callback(|_| PersonsListMsg::FindPressed);
+        let partial_name_change = self.link.callback(|e: InputData| PersonsListMsg::PartialNameChanged(e.value));
+        let filter_pressed = self.link.callback(|_| PersonsListMsg::FilterPressed);
+        let delete_pressed = self.link.callback(|_| PersonsListMsg::DeletePressed);
+        let add_pressed = self.link.callback(|_| PersonsListMsg::AddPressed);
+        
+        let tbody = html! {
+            for self.filtered_persons.iter().map(|p| {
+                let id = p.id;
+                let name = p.name.clone();
+                html! {
+                    <tr>
+                        <td>
+                            <input
+                            type="checkbox",
+                            oninput=self.link.callback(move |_| PersonsListMsg::SelectionToggled(id)),
+                            checked=self.selected_ids.contains(&id),
+                            /></td>
+                        <td>
+                        <button onclick=self.link.callback(move |_| PersonsListMsg::EditPressed(id))>{ "Edit" }</button></td>
+                        <td>{ id }</td>
+                        <td>{ name }</td>
+                    </tr>
+                }
+            })
+        };
+
+        let persons_list_body = if !self.filtered_persons.is_empty() {
+            html! {
+                <table>
+                    <thead>
+                        <th></th>
+                        <th></th>
+                        <th>{ "Id" }</th>
+                        <th>{ "Name" }</th>
+                    </thead>
+                    <tbody>
+                    { tbody }
+                    </tbody>
+                </table>
+            }
+        } else {
+            html! { <p>{ "No persons." }</p>}
+        };
+
         html! {
-	    <div>
+            <div>
                 <div>
                     <label>{ "Id: " }</label>
-                    <input
-                        type="number",
-                        oninput=|e| PersonsListMsg::IdChanged(e.value),/>
+                    <input type="number" oninput=change_id />
                     { " " }
-                    <button
-                        onclick=|_| PersonsListMsg::FindPressed,>
-                        { "Find" }
-                    </button>
+                    <button onclick=find_pressed>{ "Find" }</button>
                 </div>
                 <div>
                     <label>{ "Name portion: " }</label>
-                    <input
-                        type="text",
-                        oninput=|e| PersonsListMsg::PartialNameChanged(e.value),
-                    />
+                    <input type="text" oninput=partial_name_change />
                     { " " }
-                    <button
-                        onclick=|_| PersonsListMsg::FilterPressed,
-                    >
-                        { "Filter" }
-                    </button>
+                    <button onclick=filter_pressed,>{ "Filter" }</button>
                 </div>
-                <button
-                    onclick=|_| PersonsListMsg::DeletePressed,
-                    disabled=!self.can_write,
-                >
-                    { "Delete Selected Persons" }
-                    </button>
+                <button onclick=delete_pressed disabled=!self.can_write>{ "Delete Selected Persons" }</button>
                 { " " }
-                <button
-                    onclick=|_| PersonsListMsg::AddPressed,
-                    disabled=!self.can_write,
-                >
-                    { "Add New Person" }
-                    </button>
-
-                {
-                    if !self.filtered_persons.is_empty() {
-                        html! {
-                            <table>
-                                <thead>
-                                    <th></th>
-                                    <th></th>
-                                    <th>{ "Id" }</th>
-                                    <th>{ "Name" }</th>
-                                </thead>
-                                <tbody>
-                                    {
-                                        for self.filtered_persons.iter().map(|p| {
-                                            let id = p.id;
-                                            let name = p.name.clone();
-                                            html! {
-                                                <tr>
-                                                    <td><input
-                                                        type="checkbox",
-                                                        oninput=|_| PersonsListMsg::SelectionToggled(id),
-                                                        checked=self.selected_ids.contains(&id),
-                                                        /></td>
-                                                    <td><button
-                                                        onclick=|_| PersonsListMsg::EditPressed(id),>{ "Edit" }</button></td>
-                                                    <td>{ id }</td>
-                                                    <td>{ name }</td>
-                                                </tr>
-                                            }
-                                        })
-                                    }
-                                </tbody>
-                            </table>
-                        }
-                    }
-                    else {
-
-                            <p>{ "No persons." }</p>
-                        }
-                    }
-                }
+                <button onclick=add_pressed disabled=!self.can_write>{ "Add New Person" }</button>
+                { persons_list_body }
             </div>
         }
     }

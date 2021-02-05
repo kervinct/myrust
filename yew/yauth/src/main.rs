@@ -1,14 +1,21 @@
+#![recursion_limit="512"]
+
 use yew::prelude::*;
 
 mod db_access;
 mod login;
+mod one_person;
+mod persons_list;
 
 use login::LoginModel;
-use db_access::{DbConnection, DbPrivilege, User};
+use db_access::{DbConnection, DbPrivilege, User, Person};
+use one_person::OnePersonModel;
+use persons_list::PersonsListModel;
 
 enum Page {
     Login,
     PersonsList,
+    OnePerson(Option<Person>),
 }
 
 struct MainModel {
@@ -22,6 +29,8 @@ struct MainModel {
 enum MainMsg {
     LoggedIn(User),
     ChangeUserPressed,
+    GoToOnePersonPage(Option<Person>),
+    GoToPersonsListPage,
 }
 
 impl Component for MainModel {
@@ -51,6 +60,8 @@ impl Component for MainModel {
                 self.can_write = user.privileges.contains(&DbPrivilege::CanWrite);
             }
             ChangeUserPressed => self.page = Page::Login,
+            GoToOnePersonPage(person) => self.page = Page::OnePerson(person),
+            GoToPersonsListPage => self.page = Page::PersonsList,
         }
         true
     }
@@ -80,7 +91,21 @@ impl Component for MainModel {
                 />
             },
             Page::PersonsList => html! {
-                <h2>{ "Page to be implemented" }</h2>
+                // <h2>{ "Page to be implemented" }</h2>
+                <PersonsListModel:
+                    can_write=self.can_write,
+                    go_to_one_person_page=self.link.callback(|person| GoToOnePersonPage(person)),
+                    db_connection=Some(self.db_connection.clone()),
+                />
+            },
+            Page::OnePerson(person) => html! {
+                <OnePersonModel:
+                    id=person.as_ref().map_or(None, |p| Some(p.id)),
+                    name=person.as_ref().map_or("".to_string(), |p| p.name.clone()),
+                    can_write=self.can_write,
+                    go_to_persons_list_page=self.link.callback(|_| GoToPersonsListPage),
+                    db_connection=Some(self.db_connection.clone()),
+                />
             },
         };
 

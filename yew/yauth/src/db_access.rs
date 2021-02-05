@@ -29,13 +29,13 @@ impl DbConnection {
             persons: vec![],
             users: vec![
                 User {
-                    username: "joe".to_string(),
-                    password: "xjoe".to_string(),
+                    username: "reader".to_string(),
+                    password: "reader".to_string(),
                     privileges: vec![DbPrivilege::CanRead],
                 },
                 User {
-                    username: "susan".to_string(),
-                    password: "xsusan".to_string(),
+                    username: "admin".to_string(),
+                    password: "admin".to_string(),
                     privileges: vec![DbPrivilege::CanRead, DbPrivilege::CanWrite],
                 },
             ],

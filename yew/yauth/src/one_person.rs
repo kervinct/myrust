@@ -37,7 +37,7 @@ impl Component for OnePersonModel {
     type Message = OnePersonMsg;
     type Properties = OnePersonProps;
 
-    pub fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
+    fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
         Self {
             link,
             id: props.id,
@@ -49,7 +49,7 @@ impl Component for OnePersonModel {
         }
     }
 
-    pub fn change(&mut self, props: Self::Properties) -> ShouldRender {
+    fn change(&mut self, props: Self::Properties) -> ShouldRender {
         self.id = props.id;
         self.name = props.name;
         self.can_write = props.can_write;
@@ -59,7 +59,7 @@ impl Component for OnePersonModel {
         true
     }
 
-    pub fn update(&mut self, msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, msg: Self::Message) -> ShouldRender {
         use OnePersonMsg::*;
         match msg {
             NameChanged(name) => self.name = name,
@@ -88,7 +88,7 @@ impl Component for OnePersonModel {
         true
     }
 
-    pub fn view(&self) -> Html {
+    fn view(&self) -> Html {
         let change_name = self.link.callback(
             |e: InputData| OnePersonMsg::NameChanged(e.value));
         let save = self.link.callback(
