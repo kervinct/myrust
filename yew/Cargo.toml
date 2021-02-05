@@ -3,4 +3,5 @@ members = [
     "adder",
     "incr",
     "login",
+    "yauth",
 ]
