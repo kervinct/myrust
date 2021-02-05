@@ -8,4 +8,3 @@ edition = "2018"
 
 [dependencies]
 yew = "0.17.4"
-yew-services = { path = "../yew-services" }
