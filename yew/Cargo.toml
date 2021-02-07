@@ -4,4 +4,6 @@ members = [
     "incr",
     "login",
     "yauth",
+    "yclient",
+    "persons_db",
 ]
