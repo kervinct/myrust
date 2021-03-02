@@ -26,12 +26,12 @@ struct Pair<'a, 'b> {
     two: &'b mut i32,
 }
 
-// 被借用的输入必须超过借用者，此处x、y必须比print_refs存活更久
+// 入参是两个借用，因为没有返回，编译器可以在编译时推断这两个借用是否超过函数调用的lifetime
 fn print_refs<'a, 'b>(x: &'a i32, y: &'b i32) {
     println!("x is {} and y is {}", x, y);
 }
 
-// 函数参数中不包含使用'a的引用，所以'a指函数的lifetime，默认为'static
+// 函数参数中没有引用，a在编译时推断为函数自身lifetime即'static
 fn failed_borrow<'a>() {
     let _x = 12;
 

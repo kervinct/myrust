@@ -2,9 +2,13 @@ fn apply<F>(f: F) where F: FnOnce() {
     f();
 }
 
-fn apply_to_3<F>(f: F) -> i32 where F: Fn(i32) -> i32 {
+fn apply_to_3<F>(f: F) -> i32
+where
+    F: Fn(i32) -> i32,
+{
     f(3)
 }
+
 
 fn call_me<F: Fn()>(f: F) {
     f();
@@ -43,7 +47,7 @@ fn main() {
 
     println!("Closure returned: {}", closure("a string"));
 
-    fn function(i:i32) -> i32 { i + 1}
+    fn function(i: i32) -> i32 { i + 1 }
 
     let closure_annotated = |i: i32| -> i32 { i + 1 };
     let closure_inferred = |i| i + 1;
@@ -94,7 +98,7 @@ fn main() {
 
     let closure = || println!("I'm a closure!");
     call_me(closure);
-    call_me(function);
+    call_me(self::function);
 
     /*
      * as output parameter
@@ -121,7 +125,7 @@ fn main() {
     // iter() 输出&T，find的闭包的参数必须是&T，所以使用&&模式匹配
     println!("Find 2 in vec1: {:?}", iter.find(|&&x| x==2));
     // vector into_iter() 输出T，不需要模式匹配
-    println!("2 in vec2: {}", vec2.into_iter().any(|x| x==2));
+    // println!("2 in vec2: {}", vec2.into_iter().any(|x| x==2));
     println!("Find 2 in vec2: {:?}", into_iter.find(|&x| x==2));
 
     let array1 = [1, 2, 3];
@@ -129,7 +133,7 @@ fn main() {
 
     // array iter()和into_iter() 均输出&T，需要模式匹配
     println!("2 in array1: {}", array1.iter().any(|&x| x==2));
-    println!("Find 2 in array1: {}", array1.iter().find(|&&x| x==2));
+    println!("Find 2 in array1: {:?}", array1.iter().find(|&&x| x==2));
     println!("2 in array2: {}", array2.into_iter().any(|&x| x==2));
-    println!("Find 2 in array2: {}", array2.into_iter().find(|&&x| x==2));
+    println!("Find 2 in array2: {:?}", array2.into_iter().find(|&&x| x==2));
 }

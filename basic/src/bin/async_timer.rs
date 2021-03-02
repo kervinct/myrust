@@ -1,19 +1,29 @@
-use {
-    futures::{
-        future::{BoxFuture, FutureExt},
-        task::{waker_ref, ArcWake},
-    },
-    std::{
-        future::Future,
-        pin::Pin,
-        sync::{Arc, Mutex, mpsc::{
-            sync_channel, Receiver, SyncSender
-        }},
-        task::{Context, Poll, Waker},
-        thread,
-        time::Duration,
-    }
-};
+// use {
+//     futures::{
+//         future::{BoxFuture, FutureExt},
+//         task::{waker_ref, ArcWake},
+//     },
+//     std::{
+//         future::Future,
+//         pin::Pin,
+//         sync::{Arc, Mutex, mpsc::{
+//             sync_channel, Receiver, SyncSender
+//         }},
+//         task::{Context, Poll, Waker},
+//         thread,
+//         time::Duration,
+//     }
+// };
+use futures::future::{BoxFuture, FutureExt};
+use futures::task::{waker_ref, ArcWake};
+use std::future::Future;
+use std::pin::Pin;
+
+use std::sync::{Arc, Mutex};
+use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
+use std::task::{Context, Poll, Waker};
+use std::thread;
+use std::time::Duration;
 
 pub struct TimerFuture {
     shared_state: Arc<Mutex<SharedState>>,  // 线程间通信Arc<Mutex<..>>
@@ -26,7 +36,7 @@ struct SharedState {
 
 impl Future for TimerFuture {
     type Output = ();
-    fn poll(self: Pin<&mut self>, cx: &mut Contet<'_>) -> Poll<Self::Output> {  // 实现
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         let mut shared_state = self.shared_state.lock().unwrap();
         if shared_state.completed {
             Poll::Ready(())
@@ -50,7 +60,7 @@ impl TimerFuture {
             shared_state.completed = true;  // 值被设置为true，就可以调用wake通知Executor调用poll来推动
             if let Some(waker) = shared_state.waker.take() {
                 waker.wake()
-            }    
+            }
         });
 
         TimerFuture { shared_state }
@@ -66,6 +76,17 @@ struct Spawner {
     task_sender: SyncSender<Arc<Task>>,
 }
 
+impl Spawner {
+    fn spawn(&self, future: impl Future<Output = ()> + 'static + Send) {
+        let future = future.boxed();
+        let task = Arc::new(Task {
+            future: Mutex::new(Some(future)),
+            task_sender: self.task_sender.clone(),
+        });
+        self.task_sender.send(task).expect("too many tasks queued!");
+    }
+}
+
 struct Task {
     future: Mutex<Option<BoxFuture<'static, ()>>>,
     task_sender: SyncSender<Arc<Task>>,
@@ -75,17 +96,6 @@ fn new_executor_and_spawner() -> (Executor, Spawner) {
     const MAX_QUEUED_TASKS: usize = 10_000;
     let (task_sender, ready_queue) = sync_channel(MAX_QUEUED_TASKS);
     (Executor { ready_queue }, Spawner { task_sender })
-}
-
-impl Spwaner {
-    fn spawn(&self, future: impl Future<Output = ()> + 'static + Send) {
-        let future = future.boxed();
-        let task = Arc::new(Task {
-            future: Mutex::new(Some(future)),
-            task_sender: self.task_sender.clone(),
-        });
-        self.task_sender.send(task).expect("too many tasks queued!");
-    }
 }
 
 // ArcWake提供了简单构造Waker的方式
